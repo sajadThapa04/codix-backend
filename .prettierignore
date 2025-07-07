@@ -1,0 +1,22 @@
+# Ignore dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+public/
+
+# Ignore config and environment files
+*.config.js
+*.config.ts
+.env
+.env.local
+
+# Ignore logs and cache
+*.log
+.cache/
+.vscode/
+.idea/
+
+# Ignore specific files and generated assets
+yarn.lock
+package-lock.json

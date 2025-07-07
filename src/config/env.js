@@ -1,0 +1,13 @@
+const env = {
+    DB_CONNECTION: process.env.DB_CONNECTION || "mongodb+srv://sajad:sajad0123@cluster0.id69p.mongodb.net",
+    PORT: process.env.PORT || 8000,
+    CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
+
+    ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET || "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTczOTA5NjgwMCwiaWF0IjoxNzM5MDk2ODAwfQ.XlRPc7MHAVF1j5UzeRp7WaSOuFimv32gPYiRNChMRPU",
+    ACCESS_TOKEN_EXPIRES_IN: process.env.ACCESS_TOKEN_EXPIRES_IN || "1d",
+
+    REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET || "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTczOTA5NjgwMCwiaWF0IjoxNzM5MDk2ODAwfQ.__zDH3T6Bev4PKgXPPVzulmIdUhB1EYdTkgOmjNYX2o",
+    REFRESH_TOKEN_EXPIRES_IN: process.env.REFRESH_TOKEN_EXPIRES_IN || "7d",
+}
+
+export default env;
