@@ -41,7 +41,7 @@ const createService = asyncHandler(async (req, res) => {
             isCustomizable,
             deliveryTimeInDays,
             tags,
-
+            status // Add this line to destructure status from req.body
         } = req.body;
 
         // 2. Required fields validation
@@ -66,6 +66,7 @@ const createService = asyncHandler(async (req, res) => {
             isCustomizable: isCustomizable !== undefined ? isCustomizable : true,
             deliveryTimeInDays: deliveryTimeInDays || 7,
             tags: tags || [],
+            status: status || "active", // Add this line to include status with fallback to "active"
             createdBy: req.admin._id
         }], { session });
 
@@ -102,7 +103,7 @@ const getAllServices = asyncHandler(async (req, res) => {
         // 1. Parse query parameters
         const {
             category,
-            status = "active",
+            status,  // Removed default value to fetch all statuses
             minPrice,
             maxPrice,
             search,
@@ -113,7 +114,12 @@ const getAllServices = asyncHandler(async (req, res) => {
         } = req.query;
 
         // 2. Build query object
-        const query = { status };
+        const query = {};  // Removed default status filter
+
+        // Only add status to query if explicitly requested
+        if (status) {
+            query.status = status;
+        }
 
         if (category) {
             query.category = category;
@@ -162,7 +168,6 @@ const getAllServices = asyncHandler(async (req, res) => {
         throw new ApiError(500, error.message || "Failed to fetch services");
     }
 });
-
 // Get service by ID
 const getServiceById = asyncHandler(async (req, res) => {
     try {
@@ -501,6 +506,114 @@ const updateThumbnail = asyncHandler(async (req, res) => {
     // We can just call uploadThumbnail internally
     return uploadThumbnail(req, res);
 });
+
+
+
+// Get all active services (public)
+const getActiveServices = asyncHandler(async (req, res) => {
+    try {
+        logger.info("Fetching all active services");
+
+        // 1. Parse query parameters
+        const {
+            category,
+            minPrice,
+            maxPrice,
+            search,
+            sortBy = "createdAt",
+            sortOrder = "desc",
+            page = 1,
+            limit = 10
+        } = req.query;
+
+        // 2. Build query object - only active services
+        const query = { status: "active" };
+
+        if (category) {
+            query.category = category;
+        }
+
+        if (minPrice || maxPrice) {
+            query.price = {};
+            if (minPrice) query.price.$gte = Number(minPrice);
+            if (maxPrice) query.price.$lte = Number(maxPrice);
+        }
+
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { description: { $regex: search, $options: "i" } },
+                { tags: { $regex: search, $options: "i" } }
+            ];
+        }
+
+        // 3. Build sort object
+        const sort = {};
+        sort[sortBy] = sortOrder === "desc" ? -1 : 1;
+
+        // 4. Calculate pagination
+        const skip = (page - 1) * limit;
+
+        // 5. Execute query
+        const services = await Services.find(query)
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .select("-createdBy -__v"); // Exclude admin-specific fields
+
+        const totalServices = await Services.countDocuments(query);
+
+        res.status(200).json(
+            new ApiResponse(200, {
+                services,
+                total: totalServices,
+                page: Number(page),
+                pages: Math.ceil(totalServices / limit)
+            }, "Active services fetched successfully")
+        );
+    } catch (error) {
+        logger.error(`Error in getActiveServices: ${error.message}`, { stack: error.stack });
+        throw new ApiError(500, error.message || "Failed to fetch services");
+    }
+});
+
+// Get active service by ID (public)
+const getActiveServiceById = asyncHandler(async (req, res) => {
+    try {
+        logger.info("Fetching active service by ID");
+
+        const { serviceId } = req.params;
+
+        // 1. Validate service ID
+        if (!mongoose.Types.ObjectId.isValid(serviceId)) {
+            logger.error("Invalid service ID");
+            throw new ApiError(400, "Invalid service ID");
+        }
+
+        // 2. Find active service
+        const service = await Services.findOne({
+            _id: serviceId,
+            status: "active"
+        }).select("-createdBy -__v"); // Exclude admin-specific fields
+
+        if (!service) {
+            logger.error("Active service not found");
+            throw new ApiError(404, "Service not found or not active");
+        }
+
+        res.status(200).json(
+            new ApiResponse(200, service, "Service fetched successfully")
+        );
+    } catch (error) {
+        logger.error(`Error in getActiveServiceById: ${error.message}`, { stack: error.stack });
+
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        throw new ApiError(500, error.message || "Failed to fetch service");
+    }
+});
+
 export {
     createService,
     getAllServices,
@@ -509,5 +622,7 @@ export {
     deleteService,
     toggleServiceStatus,
     uploadThumbnail,
-    updateThumbnail
+    updateThumbnail,
+    getActiveServices,
+    getActiveServiceById
 };
