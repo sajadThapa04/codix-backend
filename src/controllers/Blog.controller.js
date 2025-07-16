@@ -264,9 +264,9 @@ const deleteBlog = asyncHandler(async (req, res) => {
 // Get all blog posts
 const getAllBlogs = asyncHandler(async (req, res) => {
     try {
-        logger.info("Fetching all blogs");
+        logger.info("Fetching all blogs", { query: req.query });
 
-        // 1. Parse query parameters
+        // Destructure with defaults
         const {
             category,
             status = "published",
@@ -279,44 +279,56 @@ const getAllBlogs = asyncHandler(async (req, res) => {
             limit = 10
         } = req.query;
 
-        // 2. Build query object
+        // Build query - enforce published for non-authors
         const query = {};
 
-        // Only show published blogs to non-authors
         if (!author || author !== req.client?._id.toString()) {
             query.status = "published";
-        } else {
-            if (status) query.status = status;
+        } else if (status) {
+            query.status = status;
         }
 
+        // Add filters
         if (category) query.category = category;
         if (author) query.author = author;
         if (featured !== undefined) query.featured = featured === "true";
 
+        // Optimized search
         if (search) {
-            query.$or = [
-                { title: { $regex: search, $options: "i" } },
-                { content: { $regex: search, $options: "i" } },
-                { tags: { $regex: search, $options: "i" } }
-            ];
+            if (search.length > 2) { // Only search if meaningful input
+                query.$text = { $search: search };
+            } else {
+                // Fallback to prefix regex for short searches
+                query.$or = [
+                    { title: { $regex: `^${search}`, $options: "i" } },
+                    { tags: { $regex: `^${search}`, $options: "i" } }
+                ];
+            }
         }
 
-        // 3. Build sort object
+        // Build sort with text score priority
         const sort = {};
+        if (search) sort.score = { $meta: "textScore" };
         sort[sortBy] = sortOrder === "desc" ? -1 : 1;
 
-        // 4. Calculate pagination
+        // Pagination
         const skip = (page - 1) * limit;
+        const options = {
+            sort,
+            skip,
+            limit: Math.min(limit, 100), // Enforce max limit
+            lean: true // Faster, read-only
+        };
 
-        // 5. Execute query
-        const blogs = await Blog.find(query)
-            .sort(sort)
-            .skip(skip)
-            .limit(limit)
-            .populate("author", "fullName profileImage")
-            .select("-content"); // Don't send full content in list view
+        // Parallel execution
+        const [blogs, totalBlogs] = await Promise.all([
+            Blog.find(query, '-content', options)
+                .populate("author", "fullName profileImage"),
+            Blog.countDocuments(query)
+        ]);
 
-        const totalBlogs = await Blog.countDocuments(query);
+        // Cache control
+        res.set('Cache-Control', 'public, max-age=60');
 
         res.status(200).json(
             new ApiResponse(200, {
@@ -326,6 +338,7 @@ const getAllBlogs = asyncHandler(async (req, res) => {
                 pages: Math.ceil(totalBlogs / limit)
             }, "Blogs fetched successfully")
         );
+
     } catch (error) {
         logger.error(`Error in getAllBlogs: ${error.message}`, { stack: error.stack });
         throw new ApiError(500, error.message || "Failed to fetch blogs");

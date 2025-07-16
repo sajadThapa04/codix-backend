@@ -111,10 +111,22 @@ blogSchema.pre("save", function (next) {
 // Add this to skip validation when fetching
 blogSchema.set('validateBeforeSave', false);
 // Indexes for better query performance
-blogSchema.index({ title: "text", content: "text", tags: "text" });
-blogSchema.index({ author: 1, status: 1 });
-blogSchema.index({ category: 1, status: 1, createdAt: -1 });
-
+// Add this to your Blog model (schema)
+blogSchema.index({
+    title: "text",
+    content: "text",
+    tags: "text"
+}, {
+    weights: {
+        title: 10,
+        tags: 5,
+        content: 1
+    }
+});
+// For common query patterns
+blogSchema.index({ status: 1, createdAt: -1 });
+blogSchema.index({ author: 1, createdAt: -1 });
+blogSchema.index({ category: 1, createdAt: -1 });
 // Virtual for like count
 blogSchema.virtual("likeCount").get(function () {
     return this.likes ? this.likes.length : 0;

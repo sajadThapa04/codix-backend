@@ -32,41 +32,56 @@ const createService = asyncHandler(async (req, res) => {
             throw new ApiError(403, "Unauthorized: You don't have permission to manage services");
         }
 
-        const {
-            title,
-            category,
-            description,
-            features,
-            price,
-            isCustomizable,
-            deliveryTimeInDays,
-            tags,
-            status // Add this line to destructure status from req.body
-        } = req.body;
+        // Parse features and tags from JSON strings
+        let features = [];
+        if (req.body.features) {
+            try {
+                features = JSON.parse(req.body.features);
+                if (!Array.isArray(features)) {
+                    features = [];
+                }
+            } catch (e) {
+                logger.warn("Failed to parse features JSON");
+                features = [];
+            }
+        }
+
+        let tags = [];
+        if (req.body.tags) {
+            try {
+                tags = JSON.parse(req.body.tags);
+                if (!Array.isArray(tags)) {
+                    tags = [];
+                }
+            } catch (e) {
+                logger.warn("Failed to parse tags JSON");
+                tags = [];
+            }
+        }
 
         // 2. Required fields validation
-        if (!title || !description || price === undefined) {
+        if (!req.body.title || !req.body.description || req.body.price === undefined) {
             logger.error("Missing required fields");
             throw new ApiError(400, "Title, description and price are required");
         }
 
         // 3. Price validation
-        if (isNaN(price)) {
+        if (isNaN(req.body.price)) {
             logger.error("Invalid price format");
             throw new ApiError(400, "Price must be a number");
         }
 
         // 4. Create service
         const service = await Services.create([{
-            title,
-            category,
-            description,
-            features: features || [],
-            price,
-            isCustomizable: isCustomizable !== undefined ? isCustomizable : true,
-            deliveryTimeInDays: deliveryTimeInDays || 7,
-            tags: tags || [],
-            status: status || "active", // Add this line to include status with fallback to "active"
+            title: req.body.title,
+            category: req.body.category,
+            description: req.body.description,
+            features: features,
+            price: req.body.price,
+            isCustomizable: req.body.isCustomizable !== undefined ? req.body.isCustomizable : true,
+            deliveryTimeInDays: req.body.deliveryTimeInDays || 7,
+            tags: tags,
+            status: req.body.status || "active",
             createdBy: req.admin._id
         }], { session });
 
@@ -248,11 +263,39 @@ const updateService = asyncHandler(async (req, res) => {
             throw new ApiError(403, "Unauthorized: You can only update services you created");
         }
 
-        // 5. Update fields
+        // 5. Handle file upload if exists
+        if (req.file) {
+            service.thumbnail = req.file.path;
+        }
+
+        // 6. Handle array fields properly
+        const arrayFields = ['features', 'tags'];
+        arrayFields.forEach(field => {
+            if (req.body[field]) {
+                try {
+                    // Try to parse as JSON first
+                    const parsedValue = JSON.parse(req.body[field]);
+                    if (Array.isArray(parsedValue)) {
+                        service[field] = parsedValue;
+                    } else {
+                        service[field] = [parsedValue];
+                    }
+                } catch (e) {
+                    // If parsing fails, handle as string or array
+                    if (Array.isArray(req.body[field])) {
+                        service[field] = req.body[field];
+                    } else {
+                        service[field] = [req.body[field]];
+                    }
+                }
+            }
+        });
+
+        // 7. Update other fields
         const updatableFields = [
-            "title", "category", "description", "features",
+            "title", "category", "description",
             "price", "isCustomizable", "deliveryTimeInDays",
-            "tags", "", "status"
+            "status"
         ];
 
         updatableFields.forEach(field => {
@@ -261,7 +304,7 @@ const updateService = asyncHandler(async (req, res) => {
             }
         });
 
-        // 6. Save updated service
+        // 8. Save updated service
         await service.save({ session });
         await session.commitTransaction();
 
@@ -288,7 +331,6 @@ const updateService = asyncHandler(async (req, res) => {
         session.endSession();
     }
 });
-
 // Delete service
 const deleteService = asyncHandler(async (req, res) => {
     const session = await mongoose.startSession();
