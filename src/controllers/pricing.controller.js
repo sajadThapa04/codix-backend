@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.utils.js";
 import ApiResponse from "../utils/ApiResponse.utils.js";
 import mongoose from "mongoose";
 import logger from "../utils/logger.utils.js";
-import Pricing from "../models/Pricing.model.js";
+import Pricing from "../models/pricing.model.js";
 import Services from "../models/services.models.js";
 import Admin from "../models/admin.model.js";
 

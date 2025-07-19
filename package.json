@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon src/index.js"
+    "start": "node src/index.js",
+    "start:prod": "node src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +25,7 @@
     "mongoose-paginate-v2": "^1.9.1",
     "multer": "^2.0.1",
     "nodemailer": "^7.0.3",
+    "prettierrc": "^0.0.0-5",
     "react-hook-form": "^7.58.1",
     "reading-time": "^1.5.0",
     "sharp": "^0.34.3",
@@ -32,8 +34,5 @@
     "validator": "^13.15.15",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0"
-  },
-  "devDependencies": {
-    "prettier": "^3.6.2"
   }
 }
