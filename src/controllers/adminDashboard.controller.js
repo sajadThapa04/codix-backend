@@ -299,7 +299,6 @@ const getAllBlogs = asyncHandler(async (req, res) => {
     }
 });
 
-
 const getBlogById = asyncHandler(async (req, res) => {
     try {
         const { id } = req.params;
@@ -435,6 +434,7 @@ const toggleBlogFeatured = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Failed to toggle blog featured status");
     }
 });
+
 export {
     getAllClients,
     getClientById,
@@ -444,5 +444,5 @@ export {
     getBlogById,
     deleteBlog,
     changeBlogStatus,
-    toggleBlogFeatured
+    toggleBlogFeatured,
 };

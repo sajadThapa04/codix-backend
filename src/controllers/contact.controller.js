@@ -28,6 +28,26 @@ const createContact = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Invalid email format");
         }
 
+        // Check if this IP or email has made more than 3 requests in the last 24 hours
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+        const contactCount = await Contact.countDocuments({
+            $or: [
+                { ipAddress: req.ip },
+                { email: email.trim().toLowerCase() }
+            ],
+            createdAt: { $gte: twentyFourHoursAgo }
+        });
+
+        if (contactCount >= 3) {
+            logger.warn('Contact rate limit exceeded', {
+                ip: req.ip,
+                email: email.trim().toLowerCase(),
+                count: contactCount
+            });
+            throw new ApiError(429, "You've reached the maximum number of contact requests (3) allowed within 24 hours. Please try again later.");
+        }
+
         // Create contact (explicitly no client association)
         const contact = await Contact.create({
             fullName: fullName.trim(),
@@ -61,7 +81,6 @@ const createContact = asyncHandler(async (req, res) => {
         throw error;
     }
 });
-
 // For authenticated clients only
 const createAuthenticatedContact = asyncHandler(async (req, res) => {
     try {
@@ -99,6 +118,22 @@ const createAuthenticatedContact = asyncHandler(async (req, res) => {
                 clientId: req.client._id
             });
             throw new ApiError(404, "Client account not found");
+        }
+
+        // Check if this client has made more than 3 requests in the last 24 hours
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+        const contactCount = await Contact.countDocuments({
+            client: req.client._id,
+            createdAt: { $gte: twentyFourHoursAgo }
+        });
+
+        if (contactCount >= 3) {
+            logger.warn('Authenticated contact rate limit exceeded', {
+                clientId: req.client._id,
+                count: contactCount
+            });
+            throw new ApiError(429, "You've reached the maximum number of contact requests (3) allowed within 24 hours. Please try again later.");
         }
 
         // Create contact with client association
