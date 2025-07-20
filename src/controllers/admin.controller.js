@@ -258,7 +258,7 @@ const loginAdmin = asyncHandler(async (req, res) => {
         const cookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "strict"
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Changed from strict
         };
 
         res.status(200)
@@ -321,7 +321,7 @@ const refreshAdminToken = asyncHandler(async (req, res) => {
         const cookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "strict"
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Changed from strict
         };
 
         res.status(200)
@@ -360,13 +360,13 @@ const logoutAdmin = asyncHandler(async (req, res) => {
         res.clearCookie("adminAccessToken", {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "strict"
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Changed from strict
         });
 
         res.clearCookie("adminRefreshToken", {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "strict"
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // Changed from strict
         });
 
         res.status(200).json(new ApiResponse(200, {}, "Admin logged out successfully"));

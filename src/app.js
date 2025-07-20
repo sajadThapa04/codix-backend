@@ -4,6 +4,7 @@ import cookie_parser from "cookie-parser";
 
 const app = express();
 
+// we have changed the Cors origin from * to https://codix-studio.vercel.app this on .env file thanks 
 app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
 app.use(cookie_parser());
 app.use(express.json({ limit: "104kb" }));

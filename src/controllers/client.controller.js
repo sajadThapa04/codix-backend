@@ -163,7 +163,9 @@ const loginClient = asyncHandler(async (req, res) => {
 
         const options = {
             httpOnly: true,
-            secure: true
+            secure: true,
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",  // Allow cross-origin cookies in prod
+
         };
 
         res.status(200)
@@ -190,7 +192,9 @@ const logoutClient = asyncHandler(async (req, res) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",  // Allow cross-origin cookies in prod
+
     };
 
     res.status(200)
@@ -219,7 +223,9 @@ const refreshClientAccessToken = asyncHandler(async (req, res) => {
 
         const options = {
             httpOnly: true,
-            secure: true
+            secure: true,
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",  // Allow cross-origin cookies in prod
+
         };
 
         res.status(200)
