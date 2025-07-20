@@ -23,7 +23,7 @@ import clientRouter from "./routes/client.routes.js";
 import clientServiceRouter from "./routes/clientService.routes.js";
 import blogRouter from "./routes/blog.routes.js";
 import contactRouter from "./routes/contact.routes.js";
-
+import careerRouter from "./routes/career.routes.js";
 //initialising router
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/adminDashboard", adminDashboardRouter);
@@ -33,5 +33,6 @@ app.use("/api/v1/client", clientRouter);
 app.use("/api/v1/clientService", clientServiceRouter);
 app.use("/api/v1/blog", blogRouter);
 app.use("/api/v1/contact", contactRouter);
+app.use("/api/v1/career", careerRouter);
 
 export default app;
