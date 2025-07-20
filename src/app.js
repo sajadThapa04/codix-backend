@@ -4,6 +4,8 @@ import cookie_parser from "cookie-parser";
 
 const app = express();
 
+app.set("trust proxy", true);
+
 // we have changed the Cors origin from * to https://codix-studio.vercel.app this on .env file thanks 
 app.use(cors({ origin: process.env.CORS_ORIGIN, credentials: true }));
 app.use(cookie_parser());
